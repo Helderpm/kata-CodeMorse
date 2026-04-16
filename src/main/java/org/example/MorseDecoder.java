@@ -35,14 +35,9 @@ public static final String REGEX = "(^0+)|(0+$)";
     public String decodeBitsAdvanced(String bits) {
         log.info("Début du décodage avancé des bits. Longueur brute : {}", bits.length());
         
-        // Nettoyage des zéros initiaux et finaux
         bits = bits.replaceAll(REGEX, "");
-        if (bits.isEmpty()) {
-            log.warn("Le message reçu est vide ou ne contient que des zéros.");
-            return "";
-        }
+        if (bits.isEmpty()) return "";
         
-        // Découpage en blocs de bits identiques (000, 11, etc.)
         String[] parts = bits.split("(?<=1)(?=0)|(?<=0)(?=1)");
         
         List<Integer> ones = new ArrayList<>();
@@ -53,25 +48,28 @@ public static final String REGEX = "(^0+)|(0+$)";
         }
         
         // --- 1. CALCUL DU SEUIL POUR LES 1 (POINT vs TRAIT) ---
+        // On garde minOne car le bloc 2 en a besoin
         int minOne = ones.stream().min(Integer::compare).orElse(1);
-        int maxOne = ones.stream().max(Integer::compare).orElse(1);
-        
+        List<Integer> sortedOnes = ones.stream().distinct().sorted().toList();
         double oneThreshold;
         
-        if (minOne == maxOne) {
-            // Nous n'avons qu'une seule durée de '1'.
-            // Si cette durée est petite (ex: 1 ou 2), c'est très probablement un point.
-            // Si elle est grande (ex: >= 3), c'est probablement un trait.
-            if (minOne < 3) {
-                oneThreshold = minOne + 1; // Le signal sera < au seuil -> Point
-            } else {
-                oneThreshold = minOne - 1; // Le signal sera > au seuil -> Trait
+        if (sortedOnes.size() > 1) {
+            // Détection par le plus grand écart (Gap Analysis)
+            int maxGapIdx = 0;
+            int maxGap = -1;
+            for (int i = 0; i < sortedOnes.size() - 1; i++) {
+                int gap = sortedOnes.get(i + 1) - sortedOnes.get(i);
+                if (gap > maxGap) {
+                    maxGap = gap;
+                    maxGapIdx = i;
+                }
             }
+            oneThreshold = (sortedOnes.get(maxGapIdx) + sortedOnes.get(maxGapIdx + 1)) / 2.0;
         } else {
-            // Cas normal : on prend la moyenne entre le point le plus court
-            // et le trait le plus long pour trouver la frontière.
-            oneThreshold = (minOne + maxOne) / 2.0;
+            // Cas d'une seule durée (ex: 1001 ou 1110111)
+            oneThreshold = (minOne < 3) ? minOne + 0.5 : minOne - 0.5;
         }
+        log.debug("Analyse des '1' : seuil={}", oneThreshold);
         
         // --- 2. CALCUL DES SEUILS POUR LES 0 (PAUSES) ---
         List<Integer> sortedZeros = zeros.stream().distinct().sorted().toList();
@@ -79,7 +77,7 @@ public static final String REGEX = "(^0+)|(0+$)";
         double zeroThresholdHigh;
         
         if (sortedZeros.size() < 2) {
-            // Si l'opérateur est trop régulier ou le message trop court
+            // Utilisation de minOne comme unité de référence (basé sur le standard Morse)
             zeroThresholdLow = minOne * 2.0;
             zeroThresholdHigh = minOne * 6.0;
         } else {
@@ -96,11 +94,10 @@ public static final String REGEX = "(^0+)|(0+$)";
             // Seuil inter-mot (le plus grand saut)
             zeroThresholdHigh = (sortedZeros.get(maxGapIdx) + sortedZeros.get(maxGapIdx + 1)) / 2.0;
             
-            // Seuil inter-caractère (le deuxième plus grand saut)
-            int secondGapIdx = -1;
             int secondMaxGap = -1;
-            for (int i = 0; i < sortedZeros.size() - 1; i++) {
-                if (i == maxGapIdx) continue;
+            int secondGapIdx = -1;
+            // On cherche le saut pour l'espace inter-caractère sous le seuil du mot
+            for (int i = 0; i < maxGapIdx; i++) {
                 int gap = sortedZeros.get(i + 1) - sortedZeros.get(i);
                 if (gap > secondMaxGap) {
                     secondMaxGap = gap;
@@ -111,8 +108,13 @@ public static final String REGEX = "(^0+)|(0+$)";
             if (secondGapIdx != -1) {
                 zeroThresholdLow = (sortedZeros.get(secondGapIdx) + sortedZeros.get(secondGapIdx + 1)) / 2.0;
             } else {
-                zeroThresholdLow = zeroThresholdHigh / 2.0;
+                zeroThresholdLow = (sortedZeros.getFirst() + zeroThresholdHigh) / 2.0;
             }
+        }
+        
+        // Sécurité : Low doit être inférieur à High
+        if (zeroThresholdLow >= zeroThresholdHigh) {
+            zeroThresholdLow = zeroThresholdHigh / 2.0;
         }
         log.debug("Analyse des '0' : seuil bas={}, seuil haut={}", zeroThresholdLow, zeroThresholdHigh);
         
@@ -121,7 +123,8 @@ public static final String REGEX = "(^0+)|(0+$)";
         for (String part : parts) {
             int len = part.length();
             if (part.charAt(0) == '1') {
-                sb.append(len > oneThreshold ? "−" : "·");
+                // Utilisation de '.' et '-' standards pour éviter les soucis d'encodage
+                sb.append(len > oneThreshold ? "-" : ".");
             } else {
                 if (len >= zeroThresholdHigh) {
                     sb.append("   "); // Inter-mot
@@ -153,7 +156,7 @@ public static final String REGEX = "(^0+)|(0+$)";
         String normalized = morseCode.replace('·', '.').replace('−', '-');
         
         // Split par 3 espaces pour isoler les mots
-        String decoded = Arrays.stream(normalized.trim().split("   "))
+        String decoded = Arrays.stream(normalized.trim().split(" {3}"))
                 .map(word -> Arrays.stream(word.split(" ")) // Split par 1 espace pour les lettres
                         .map(MorseCode::get)
                         .collect(Collectors.joining()))

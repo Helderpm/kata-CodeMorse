@@ -44,7 +44,7 @@ class MorseDecoderTest {
         String morse = decoder.decodeBitsAdvanced(bits);
         
         // Utilisation des caractères ASCII . et -
-        String expected = "···· · −·−−   ·−−− ··− −·· ·";
+        String expected = ".... . -.--   .--- ..- -.. .";
         assertEquals(expected, morse, "Le décodage doit retourner des caractères ASCII standards");
     }
 
@@ -52,7 +52,7 @@ class MorseDecoderTest {
     @Order(3)
     @DisplayName("Décodage de morse vers text")
     void decodeMorseTest() {
-        String morse = "···· · −·−−   ·−−− ··− −·· ·";
+        String morse = ".... . -.--   .--- ..- -.. .";
         String text = decoder.decodeMorse(morse);
         
         // Utilisation des caractères ASCII . et -
