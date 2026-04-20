@@ -9,7 +9,8 @@ package org.example;
  * ├── ConfigurationTest
  * ├── PerformanceTest
  * ├── EdgeCaseTest
- * └── ComplexMessageTest
+ * ├── ComplexMessageTest
+ * └── SpecificTestCaseTest
  */
 public class MorseDecoderTest {
 
@@ -26,6 +27,7 @@ public class MorseDecoderTest {
             allTestsPassed &= runTestCategory("Performance", PerformanceTest::runAllTests);
             allTestsPassed &= runTestCategory("Edge Cases", EdgeCaseTest::runAllTests);
             allTestsPassed &= runTestCategory("Complex Messages", ComplexMessageTest::runAllTests);
+            allTestsPassed &= runTestCategory("Specific Test Cases", SpecificTestCaseTest::runAllTests);
             
             // Run additional validation tests
             allTestsPassed &= runValidationTests();
@@ -104,6 +106,7 @@ public class MorseDecoderTest {
             System.out.println("  ✓ Performance Tests");
             System.out.println("  ✓ Edge Case Tests");
             System.out.println("  ✓ Complex Message Tests");
+            System.out.println("  ✓ Specific Test Case Tests");
             System.out.println("  ✓ Validation Tests");
             System.out.println("\nThe Morse decoder implementation is working correctly!");
         } else {
@@ -136,9 +139,12 @@ public class MorseDecoderTest {
             case "complex":
                 ComplexMessageTest.runAllTests();
                 break;
+            case "specific":
+                SpecificTestCaseTest.runAllTests();
+                break;
             default:
                 System.err.println("Unknown test category: " + category);
-                System.out.println("Available categories: basic, config, performance, edge, complex");
+                System.out.println("Available categories: basic, config, performance, edge, complex, specific");
         }
     }
 
