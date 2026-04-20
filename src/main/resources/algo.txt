@@ -1,0 +1,63 @@
+Voici une description détaillée des algorithmes utilisés dans ton code
+pour relever le défi du décodage d'un signal Morse "humain" (irrégulier).
+
+---
+
+## 1. Algorithme de `decodeBitsAdvanced`
+Cette méthode est le cœur du projet. Elle ne se contente pas de lire des bits,
+elle effectue une **analyse de clusters** (regroupement de données)
+pour s'adapter à la vitesse de l'émetteur.
+
+### Étape A : Nettoyage et Segmentation
+* **Nettoyage :** Suppression des zéros inutiles au début et à la fin du signal via une expression régulière.
+* **Découpage (Split) :** Le signal est découpé à chaque changement de bit (quand on passe de 0 à 1 ou de 1 à 0).
+                       On obtient une liste de blocs de "1" (signaux) et de blocs de "0" (silences).
+* **Extraction des données :** On calcule la longueur de chaque bloc et on les stocke dans deux listes distinctes :
+                           `ones` et `zeros`.
+
+### Étape B : Calcul du Seuil des Signaux (`oneThreshold`)
+L'objectif est de distinguer un **point** d'un **trait**.
+    1.  On trie les durées uniques des "1".
+    2.  **Gap Analysis :** On cherche l'écart (gap) le plus important entre deux durées consécutives.
+    * *Exemple :* Si on a des durées de [2, 3, 8, 9], le plus gros saut est entre 3 et 8.
+    3.  **Calcul du pivot :** Le seuil est fixé au milieu de ce saut : $$(3 + 8) / 2 = 5.5$$. Tout signal > 5.5 sera un trait, sinon un point.
+    4.  **Cas limite :** S'il n'y a qu'une seule durée, on applique une règle arbitraire basée sur la longueur (petit = point, grand = trait).
+
+### Étape C : Calcul des Seuils des Silences (`zeroThresholdLow` et `High`)
+C'est ici que l'on distingue les pauses **intra-caractère**, **inter-caractère** et **inter-mot**.
+    1.  **Détection du Seuil Haut (Mot) :** On cherche le plus grand écart dans la liste des durées de zéros triées.
+                                        Le milieu de cet écart devient `zeroThresholdHigh`.
+    2.  **Détection du Seuil Bas (Lettre) :** On cherche le plus grand écart parmi les durées situées *en dessous* du seuil haut précédemment calculé.
+                                            Le milieu de cet écart devient `zeroThresholdLow`.
+    3.  **Sécurité :** L'algorithme vérifie que la hiérarchie est respectée ($$Bas < Haut$$) pour éviter des erreurs de logique.
+
+### Étape D : Traduction en Symboles
+L'algorithme parcourt les blocs segmentés à l'étape A :
+* Si c'est un **1** : compare la longueur au `oneThreshold` $$\rightarrow$$ `.` ou `-`.
+* Si c'est un **0** :
+    * Longueur $$\ge$$`High`$$\rightarrow$$ Ajoute 3 espaces (nouveau mot).
+    * Longueur $$\ge$$`Low`$$\rightarrow$$ Ajoute 1 espace (nouvelle lettre).
+    * Sinon $$\rightarrow$$ Ne rien ajouter (même lettre).
+
+
+
+---
+
+## 2. Algorithme de `decodeMorse`
+Cette méthode est une fonction de traduction plus classique, utilisant une approche descendante (Top-Down).
+
+1.  **Normalisation :** Conversion des caractères Unicode spéciaux (`·`, `−`) en caractères ASCII standards (`.`, `-`)
+pour assurer la compatibilité avec le dictionnaire de référence.
+2.  **Découpage par Mots :** La chaîne est découpée en utilisant le séparateur de 3 espaces (`"   "`).
+3.  **Découpage par Lettres :** Pour chaque mot trouvé, on redécoupe la sous-chaîne par le séparateur de 1 espace (`" "`).
+4.  **Mapping (Dictionnaire) :** Chaque groupe de symboles Morse est envoyé à une classe utilitaire `MorseCode::get`
+qui retourne le caractère ASCII correspondant (ex: `.-` devient `A`).
+5.  **Recomposition :** Les lettres sont concaténées pour former des mots, et les mots sont joints par
+un espace simple pour reconstruire la phrase originale.
+
+---
+
+### Résumé de la stratégie
+L'intelligence du code réside dans le fait qu'il ne cherche pas à savoir si un point dure exactement "1 unité",
+mais il cherche à comprendre **"où se situe la frontière naturelle"** entre les durées courtes et longues dans ce message spécifique.
+C'est ce qu'on appelle un algorithme de **clustering non supervisé à une dimension**.

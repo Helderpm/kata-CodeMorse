@@ -1,100 +1,157 @@
 package org.example;
 
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+/**
+ * Main test runner for the Morse decoder test suite.
+ * Orchestrates all test classes in a structured tree hierarchy.
+ * 
+ * Test Tree Structure:
+ * ├── BasicFunctionalityTest
+ * ├── ConfigurationTest
+ * ├── PerformanceTest
+ * ├── EdgeCaseTest
+ * └── ComplexMessageTest
+ */
+public class MorseDecoderTest {
 
-import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class MorseDecoderTest {
-
-    private final MorseDecoder decoder = new MorseDecoder();
-
-    @Test
-    @Order(1)
-    @DisplayName("Cas limites : bits vides ou uniquement des zéros")
-    void defaultCasesTest() {
-        // Cas chaîne vide
-        assertEquals("", decoder.decodeBitsAdvanced(""), "Une chaîne vide doit retourner vide");
+    public static void main(String[] args) {
+        System.out.println("=== Morse Decoder Test Suite ===");
+        System.out.println("Unified test tree structure with comprehensive coverage\n");
         
-        // Cas uniquement des zéros
-        assertEquals("", decoder.decodeBitsAdvanced("000000"), "Une chaîne de zéros doit retourner vide");
+        boolean allTestsPassed = true;
         
-        // Cas zéros avec espaces dans decodeMorse
-        assertEquals("", decoder.decodeMorse(""), "Le décodeur Morse doit gérer les chaînes vides");
-        assertEquals("", decoder.decodeMorse("   "), "Le décodeur Morse doit gérer les espaces seuls");
-    }
-    
-    //the message ```HEY JUDE```,
-    // that is ```···· · −·−−   ·−−− ··− −·· ·``` may actually be received as follows:
-    //```0000000011011010011100000110000001111110100111110011111100000000000111011111111011111011111000000101100011111100000111110011101100000100000```
-    @Test
-    @Order(2)
-    @DisplayName("Décodage de bits vers morse")
-    void decodeBitsAdvancedTest() {
-        String bits = "0000000011011010011100000110000001111110100111110011111100000000000111011111111011111011111000000101100011111100000111110011101100000100000";
-        String morse = decoder.decodeBitsAdvanced(bits);
+        try {
+            // Run all test categories
+            allTestsPassed &= runTestCategory("Basic Functionality", BasicFunctionalityTest::runAllTests);
+            allTestsPassed &= runTestCategory("Configuration", ConfigurationTest::runAllTests);
+            allTestsPassed &= runTestCategory("Performance", PerformanceTest::runAllTests);
+            allTestsPassed &= runTestCategory("Edge Cases", EdgeCaseTest::runAllTests);
+            allTestsPassed &= runTestCategory("Complex Messages", ComplexMessageTest::runAllTests);
+            
+            // Run additional validation tests
+            allTestsPassed &= runValidationTests();
+            
+        } catch (Exception e) {
+            System.err.println("Test suite execution failed: " + e.getMessage());
+            allTestsPassed = false;
+        }
         
-        // Utilisation des caractères ASCII . et -
-        String expected = ".... . -.--   .--- ..- -.. .";
-        assertEquals(expected, morse, "Le décodage doit retourner des caractères ASCII standards");
+        // Print final summary
+        printFinalSummary(allTestsPassed);
+        
+        // Exit with appropriate code
+        System.exit(allTestsPassed ? 0 : 1);
     }
 
-    @Test
-    @Order(3)
-    @DisplayName("Décodage de morse vers text")
-    void decodeMorseTest() {
-        String morse = ".... . -.--   .--- ..- -.. .";
-        String text = decoder.decodeMorse(morse);
+    private static boolean runTestCategory(String categoryName, Runnable testRunner) {
+        System.out.println("\n" + "=".repeat(50));
+        System.out.println("RUNNING: " + categoryName.toUpperCase());
+        System.out.println("=".repeat(50));
         
-        // Utilisation des caractères ASCII . et -
-        String expected = "HEY JUDE";
-        assertEquals(expected, text, "Le décodage doit retourner des caractères ASCII standards");
+        try {
+            testRunner.run();
+            System.out.println("✓ " + categoryName + " tests completed successfully");
+            return true;
+        } catch (Exception e) {
+            System.err.println("✗ " + categoryName + " tests failed: " + e.getMessage());
+            return false;
+        }
     }
 
-    
-    //You will find below the tests cases and the expected results.
-
-    @ParameterizedTest(name = "Test {index} : Décodage de bits vers ASCII")
-    @MethodSource("provideBitsForDecoding")
-    void testFullPipeline(String bits, String expectedText) {
-        // Exécution de la chaîne complète
-        String morse = decoder.decodeBitsAdvanced(bits);
-        String result = decoder.decodeMorse(morse);
+    private static boolean runValidationTests() {
+        System.out.println("\n" + "=".repeat(50));
+        System.out.println("RUNNING: VALIDATION TESTS");
+        System.out.println("=".repeat(50));
         
-        assertEquals(expectedText, result, "Le décodage du signal binaire a échoué.");
+        boolean allValidationsPassed = true;
+        
+        // Quick validation tests
+        System.out.println("Running quick validations:");
+        
+        boolean basicValidation = BasicFunctionalityTest.quickValidation();
+        System.out.printf("  Basic functionality: %s%n", basicValidation ? "PASSED" : "FAILED");
+        allValidationsPassed &= basicValidation;
+        
+        boolean accuracyValidation = ComplexMessageTest.testAccuracy();
+        System.out.printf("  Message accuracy: %s%n", accuracyValidation ? "PASSED" : "FAILED");
+        allValidationsPassed &= accuracyValidation;
+        
+        // Configuration validation
+        try {
+            ConfigurationTest.testConfigurationValidation();
+            System.out.println("  Configuration validation: PASSED");
+        } catch (Exception e) {
+            System.out.println("  Configuration validation: FAILED");
+            allValidationsPassed = false;
+        }
+        
+        // Performance benchmark
+        System.out.println("Running performance benchmark:");
+        PerformanceTest.quickBenchmark();
+        
+        return allValidationsPassed;
     }
-    
-    private static Stream<Arguments> provideBitsForDecoding() {
-        return Stream.of(
-                // Cas 1 : HEY JUDE
-                Arguments.of("0000000011011010011100000110000001111110100111110011111100000000000111011111111011111011111000000101100011111100000111110011101100000100000",
-                        "HEY JUDE"),
-                
-                // Cas 2 : EE (Points courts)
-                Arguments.of("1001", "EE"),
-                
-                // Cas 3 : M (Traits - 3 unités)
-                Arguments.of("1110111", "M"),
-                
-                // Cas 4 : M (Traits - 6 unités, vitesse lente)
-                Arguments.of("11111100111111", "M"),
-                
-                // Cas 5 : THE QUICK BROWN FOX... (Version standard)
-                Arguments.of("00000000000111111100000011010001110111000000001110000000000000000001111111011111100001101111100000111100111100011111100000001011100000011111110010001111100110000011111100101111100000000000000111111100001111010110000011000111110010000011111110001111110011111110000010001111110001111111100000001111111101110000000000000010110000111111110111100000111110111110011111110000000011111001011011111000000000000111011111011111011111000000010001001111100000111110111111110000001110011111100011111010000001100001001000000000000000000111111110011111011111100000010001001000011111000000100000000101111101000000000000011111100000011110100001001100000000001110000000000000001101111101111000100000100001111111110000000001111110011111100011101100000111111000011011111000111111000000000000000001111110000100110000011111101111111011111111100000001111110001111100001000000000000000000000000000000000000000000000000000000000000",
-                        "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG"),
-                
-                // Cas 6 : TITANIC (Le message de détresse historique)
-                Arguments.of("00000000000000011111111000000011111111111100000000000111111111000001111111110100000000111111111111011000011111111011111111111000000000000000000011111111110000110001111111111111000111000000000001111111111110000111111111100001100111111111110000000000111111111111011100001110000000000000000001111111111010111111110110000000000000001111111111100001111111111110000100001111111111111100000000000111111111000000011000000111000000000000000000000000000011110001111100000111100000000111111111100111111111100111111111111100000000011110011111011111110000000000000000000000111111111110000000011111000000011111000000001111111111110000000001111100011111111000000000111111111110000011000000000111110000000111000000000011111111111111000111001111111111001111110000000000000000000001111000111111111100001111111111111100100000000001111111100111111110111111110000000011101111111000111000000001001111111000000001111111111000000000111100001111111000000000000011111111100111111110111111111100000000000111111110000001100000000000000000000111111101010000010000001111111100000000011111000111111111000000111111111110011111111001111111110000000011000111111110000111011111111111100001111100001111111100000000000011110011101110001000111111110000000001111000011111110010110001111111111000000000000000000111111111110000000100000000000000000011110111110000001000011101110000000000011111111100000011111111111100111111111111000111111111000001111111100000000000001110111111111111000000110011111111111101110001111111111100000000111100000111100000111111111100000111111111111000000011111111000000000001000000111100000001000001111100111111111110000000000000000000010001111111100000011111111100000000000000100001111111111110111001111111111100000111111100001111111111000000000000000000000000011100000111111111111011110000000010000000011111111100011111111111100001110000111111111111100000000000000111110000011111001111111100000000000011100011100000000000011111000001111111111101000000001110000000000000000000000000000111110010000000000111111111000011111111110000000000111111111111101111111111100000000010000000000000011111111100100001100000000000000111100111100000000001100000001111111111110000000011111111111000000000111100000000000000000000111101111111111111000000000001111000011111000011110000000001100111111100111000000000100111000000000000111110000010000011111000000000000001111111111100000000110111111111100000000000000111111111111100000111000000000111111110001111000000111111110111111000000001111000000000010000111111111000011110001111111110111110000111111111111000000000000000000000000111111111110000000111011111111100011111110000000001111111110000011111111100111111110000000001111111111100111111111110000000000110000000000000000001000011111111110000000001111111110000000000000000000000011111111111111000000111111111000001111111110000000000111111110000010000000011111111000011111001111111100000001110000000011110000000001011111111000011111011111111110011011111111111000000000000000000100011111111111101111111100000000000000001100000000000000000011110010111110000000011111111100000000001111100011111111111101100000000111110000011110000111111111111000000001111111111100001110111111111110111000000000011111111101111100011111111110000000000000000000000000010000111111111100000000001111111110111110000000000000000000000110000011110000000000001111111111100110001111111100000011100000000000111110000000011111111110000011111000001111000110000000011100000000000000111100001111111111100000111000000001111111111000000111111111100110000000001111000001111111100011100001111111110000010011111111110000000000000000000111100000011111000001111000000000111111001110000000011111111000100000000000011111111000011001111111100000000000110111000000000000111111111111000100000000111111111110000001111111111011100000000000000000000000000",
-                        "MGY CQD CQD SOS TITANIC POSITION 41.44 N 50.24 W. REQUIRE IMM...")
-        );
+
+    private static void printFinalSummary(boolean allTestsPassed) {
+        System.out.println("\n" + "=".repeat(60));
+        System.out.println("FINAL TEST SUMMARY");
+        System.out.println("=".repeat(60));
+        
+        if (allTestsPassed) {
+            System.out.println("🎉 ALL TESTS PASSED SUCCESSFULLY! 🎉");
+            System.out.println("\nTest Tree Coverage:");
+            System.out.println("  ✓ Basic Functionality Tests");
+            System.out.println("  ✓ Configuration Tests");
+            System.out.println("  ✓ Performance Tests");
+            System.out.println("  ✓ Edge Case Tests");
+            System.out.println("  ✓ Complex Message Tests");
+            System.out.println("  ✓ Validation Tests");
+            System.out.println("\nThe Morse decoder implementation is working correctly!");
+        } else {
+            System.out.println("❌ SOME TESTS FAILED ❌");
+            System.out.println("\nPlease check the test output above for details.");
+            System.out.println("Review the failed test cases and fix any issues.");
+        }
+        
+        System.out.println("=".repeat(60));
+    }
+
+    /**
+     * Runs a specific test category.
+     * Useful for targeted testing during development.
+     */
+    public static void runSpecificCategory(String category) {
+        switch (category.toLowerCase()) {
+            case "basic":
+                BasicFunctionalityTest.runAllTests();
+                break;
+            case "config":
+                ConfigurationTest.runAllTests();
+                break;
+            case "performance":
+                PerformanceTest.runAllTests();
+                break;
+            case "edge":
+                EdgeCaseTest.runAllTests();
+                break;
+            case "complex":
+                ComplexMessageTest.runAllTests();
+                break;
+            default:
+                System.err.println("Unknown test category: " + category);
+                System.out.println("Available categories: basic, config, performance, edge, complex");
+        }
+    }
+
+    /**
+     * Quick test run for development validation.
+     */
+    public static void quickTest() {
+        System.out.println("=== Quick Test Run ===");
+        
+        boolean basicPassed = BasicFunctionalityTest.quickValidation();
+        boolean accuracyPassed = ComplexMessageTest.testAccuracy();
+        
+        System.out.printf("Quick test result: %s%n", 
+            (basicPassed && accuracyPassed) ? "PASSED" : "FAILED");
     }
 }

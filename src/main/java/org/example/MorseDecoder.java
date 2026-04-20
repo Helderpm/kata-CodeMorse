@@ -1,168 +1,302 @@
 package org.example;
 
-import lombok.extern.slf4j.Slf4j;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.logging.Logger;
 
 /**
- * <h2>Stratégie de décodage pour le test 'HEY JUDE'</h2>
- * <p>
- * Le défi du message 'HEY JUDE' réside dans l'irrégularité de la transmission humaine.
- * Contrairement à un signal machine, les durées des bits ne sont pas des multiples parfaits.
+ * Unified Morse decoder with configurable parameters.
+ * Handles variable transmission speeds through statistical analysis and dynamic thresholds.
  * </p>
- * <b>Notre approche repose sur trois piliers :</b>
- * <ul>
- * <li><b>Analyse Statistique :</b> Au lieu de ratios fixes (1:3:7), nous collectons toutes les durées
- * rencontrées dans le message pour identifier les extremums.</li>
- * <li><b>Seuils Dynamiques (Clustering) :</b> Pour les signaux (1), nous calculons le pivot au milieu du
- * point le plus court et du trait le plus long.</li>
- * <li><b>Détection de Sauts (Gap Analysis) :</b> Pour les silences (0), nous cherchons les écarts les plus
- * importants entre les durées triées. Cela permet de séparer mathématiquement les pauses intra-caractère,
- * inter-caractère et inter-mot, même si l'opérateur hésite ou ralentit.</li>
- * </ul>
+ * This implementation eliminates code duplication by providing a single, flexible decoder
+ * that can be configured for different use cases.
  */
-@Slf4j
 public class MorseDecoder {
 
-public static final String REGEX = "(^0+)|(0+$)";
+    private static final Logger LOGGER = Logger.getLogger(MorseDecoder.class.getName());
 
-/**
-     * Transforme un flux de bits bruts en symboles Morse (· et −).
-     * Gère les variations de vitesse en analysant les clusters de durées.
-     * * @param bits Chaîne de 0 et de 1
-     * @return String de symboles Morse avec espaces (1 entre lettres, 3 entre mots)
+    // Configuration
+    private final MorseDecoderConfig config;
+    
+    // Pre-compiled regex patterns
+    private static final String LEADING_TRAILING_ZEROS_REGEX = "(^0+)|(0+$)";
+    private static final String BIT_SPLIT_REGEX = "(?<=1)(?=0)|(?<=0)(?=1)";
+
+    /**
+     * Creates a decoder with default configuration.
+     */
+    public MorseDecoder() {
+        this(MorseDecoderConfig.defaultConfig());
+    }
+
+    /**
+     * Creates a decoder with custom configuration.
+     */
+    public MorseDecoder(MorseDecoderConfig config) {
+        this.config = Objects.requireNonNull(config, "Configuration cannot be null");
+    }
+
+    /**
+     * Main entry point for decoding binary bits to Morse symbols.
+     * 
+     * @param bits Binary string of 0s and 1s representing Morse signal
+     * @return Morse code string with dots, dashes, and appropriate spacing
      */
     public String decodeBitsAdvanced(String bits) {
-        log.info("Début du décodage avancé des bits. Longueur brute : {}", bits.length());
-        
-        bits = bits.replaceAll(REGEX, "");
-        if (bits.isEmpty()) return "";
-        
-        String[] parts = bits.split("(?<=1)(?=0)|(?<=0)(?=1)");
-        
-        List<Integer> ones = new ArrayList<>();
-        List<Integer> zeros = new ArrayList<>();
-        for (String p : parts) {
-            if (p.contains("1")) ones.add(p.length());
-            else zeros.add(p.length());
+        if (config.isEnableLogging()) {
+            LOGGER.info("Starting advanced bit decoding. Raw length: " + bits.length());
         }
         
-        // --- 1. CALCUL DU SEUIL POUR LES 1 (POINT vs TRAIT) ---
-        // On garde minOne car le bloc 2 en a besoin
-        int minOne = ones.stream().min(Integer::compare).orElse(1);
-        List<Integer> sortedOnes = ones.stream().distinct().sorted().toList();
-        double oneThreshold;
-        
-        if (sortedOnes.size() > 1) {
-            // Détection par le plus grand écart (Gap Analysis)
-            int maxGapIdx = 0;
-            int maxGap = -1;
-            for (int i = 0; i < sortedOnes.size() - 1; i++) {
-                int gap = sortedOnes.get(i + 1) - sortedOnes.get(i);
-                if (gap > maxGap) {
-                    maxGap = gap;
-                    maxGapIdx = i;
-                }
-            }
-            oneThreshold = (sortedOnes.get(maxGapIdx) + sortedOnes.get(maxGapIdx + 1)) / 2.0;
-        } else {
-            // Cas d'une seule durée (ex: 1001 ou 1110111)
-            oneThreshold = (minOne < 3) ? minOne + 0.5 : minOne - 0.5;
-        }
-        log.debug("Analyse des '1' : seuil={}", oneThreshold);
-        
-        // --- 2. CALCUL DES SEUILS POUR LES 0 (PAUSES) ---
-        List<Integer> sortedZeros = zeros.stream().distinct().sorted().toList();
-        double zeroThresholdLow;
-        double zeroThresholdHigh;
-        
-        if (sortedZeros.size() < 2) {
-            // Utilisation de minOne comme unité de référence (basé sur le standard Morse)
-            zeroThresholdLow = minOne * 2.0;
-            zeroThresholdHigh = minOne * 6.0;
-        } else {
-            // Analyse des écarts (Gaps) pour trouver les frontières naturelles
-            int maxGapIdx = 0;
-            int maxGap = -1;
-            for (int i = 0; i < sortedZeros.size() - 1; i++) {
-                int gap = sortedZeros.get(i + 1) - sortedZeros.get(i);
-                if (gap > maxGap) {
-                    maxGap = gap;
-                    maxGapIdx = i;
-                }
-            }
-            // Seuil inter-mot (le plus grand saut)
-            zeroThresholdHigh = (sortedZeros.get(maxGapIdx) + sortedZeros.get(maxGapIdx + 1)) / 2.0;
-            
-            int secondMaxGap = -1;
-            int secondGapIdx = -1;
-            // On cherche le saut pour l'espace inter-caractère sous le seuil du mot
-            for (int i = 0; i < maxGapIdx; i++) {
-                int gap = sortedZeros.get(i + 1) - sortedZeros.get(i);
-                if (gap > secondMaxGap) {
-                    secondMaxGap = gap;
-                    secondGapIdx = i;
-                }
-            }
-            
-            if (secondGapIdx != -1) {
-                zeroThresholdLow = (sortedZeros.get(secondGapIdx) + sortedZeros.get(secondGapIdx + 1)) / 2.0;
-            } else {
-                zeroThresholdLow = (sortedZeros.getFirst() + zeroThresholdHigh) / 2.0;
-            }
+        // Validate input in strict mode
+        if (config.isStrictMode()) {
+            validateBitInput(bits);
         }
         
-        // Sécurité : Low doit être inférieur à High
-        if (zeroThresholdLow >= zeroThresholdHigh) {
-            zeroThresholdLow = zeroThresholdHigh / 2.0;
-        }
-        log.debug("Analyse des '0' : seuil bas={}, seuil haut={}", zeroThresholdLow, zeroThresholdHigh);
-        
-        // --- 3. CONSTRUCTION DE LA CHAÎNE MORSE ---
-        StringBuilder sb = new StringBuilder();
-        for (String part : parts) {
-            int len = part.length();
-            if (part.charAt(0) == '1') {
-                // Utilisation de '.' et '-' standards pour éviter les soucis d'encodage
-                sb.append(len > oneThreshold ? "-" : ".");
-            } else {
-                if (len >= zeroThresholdHigh) {
-                    sb.append("   "); // Inter-mot
-                } else if (len >= zeroThresholdLow) {
-                    sb.append(" ");    // Inter-caractère
-                }
-            }
-        }
-        
-        String result = sb.toString();
-        log.info("Décodage bits terminé : {}", result);
-        return result;
-    }
-    
-    /**
-     * Traduit une chaîne de symboles Morse en texte ASCII.
-     * Utilise la classe utilitaire {@link MorseCode}.
-     * * @param morseCode Symboles Morse (·, −)
-     * @return Texte en clair (ex: "HEY JUDE")
-     */
-    public String decodeMorse(String morseCode) {
-        if (morseCode == null || morseCode.isEmpty()) {
+        String cleanedBits = cleanBitString(bits);
+        if (cleanedBits.isEmpty()) {
             return "";
         }
         
-        log.debug("Traduction Morse vers Texte...");
+        String[] signalParts = cleanedBits.split(BIT_SPLIT_REGEX);
+        SignalDurations durations = extractSignalDurations(signalParts);
         
-        // Normalisation Unicode (·, −) -> ASCII (., -) pour le dictionnaire
-        String normalized = morseCode.replace('·', '.').replace('−', '-');
+        double oneThreshold = calculateOneThreshold(durations.ones());
+        ThresholdPair zeroThresholds = calculateZeroThresholds(durations.zeros(), durations.ones());
         
-        // Split par 3 espaces pour isoler les mots
-        String decoded = Arrays.stream(normalized.trim().split(" {3}"))
-                .map(word -> Arrays.stream(word.split(" ")) // Split par 1 espace pour les lettres
-                        .map(MorseCode::get)
-                        .collect(Collectors.joining()))
-                .collect(Collectors.joining(" "));
+        String morseResult = buildMorseString(signalParts, oneThreshold, zeroThresholds);
         
-        log.info("Résultat final de la traduction : {}", decoded);
-        return decoded;
+        if (config.isEnableLogging()) {
+            LOGGER.info("Bit decoding completed: " + morseResult);
+        }
+        
+        return morseResult;
     }
+
+    /**
+     * Converts Morse code symbols to readable text.
+     * 
+     * @param morseCode Morse code string with dots, dashes, and spacing
+     * @return Decoded text string
+     */
+    public String decodeMorse(String morseCode) {
+        if (morseCode == null || morseCode.trim().isEmpty()) {
+            return "";
+        }
+        
+        if (config.isEnableLogging()) {
+            LOGGER.info("Converting Morse to text...");
+        }
+        
+        String normalizedMorse = normalizeUnicodeCharacters(morseCode);
+        String decodedText = decodeMorseWords(normalizedMorse);
+        
+        if (config.isEnableLogging()) {
+            LOGGER.info("Final translation result: " + decodedText);
+        }
+        
+        return decodedText;
+    }
+
+    
+    // === Private Implementation Methods ===
+
+    private void validateBitInput(String bits) {
+        if (bits == null) {
+            throw new IllegalArgumentException("Input cannot be null in strict mode");
+        }
+        
+        if (bits.length() > config.getMaxSignalLength()) {
+            throw new IllegalArgumentException("Input signal too long: " + bits.length() + 
+                " (max: " + config.getMaxSignalLength() + ")");
+        }
+        
+        // Check for invalid characters
+        for (char c : bits.toCharArray()) {
+            if (c != '0' && c != '1') {
+                throw new IllegalArgumentException("Invalid character in input: '" + c + 
+                    "' (only '0' and '1' allowed in strict mode)");
+            }
+        }
+    }
+
+    private String cleanBitString(String bits) {
+        return bits.replaceAll(LEADING_TRAILING_ZEROS_REGEX, "");
+    }
+
+    private SignalDurations extractSignalDurations(String[] parts) {
+        List<Integer> ones = new ArrayList<>();
+        List<Integer> zeros = new ArrayList<>();
+        
+        for (String part : parts) {
+            if (part.contains("1")) {
+                ones.add(part.length());
+            } else {
+                zeros.add(part.length());
+            }
+        }
+        
+        return new SignalDurations(ones, zeros);
+    }
+
+    private double calculateOneThreshold(List<Integer> ones) {
+        if (ones.isEmpty()) {
+            return config.getDefaultThresholdOffset();
+        }
+        
+        int minOne = ones.stream().min(Integer::compare).orElse(1);
+        List<Integer> sortedUniqueOnes = ones.stream().distinct().sorted().toList();
+        
+        if (sortedUniqueOnes.size() > 1) {
+            return findThresholdByGapAnalysis(sortedUniqueOnes);
+        } else {
+            return calculateSingleDurationThreshold(minOne);
+        }
+    }
+
+    private double findThresholdByGapAnalysis(List<Integer> sortedValues) {
+        int maxGapIndex = findMaxGapIndex(sortedValues);
+        return (sortedValues.get(maxGapIndex) + sortedValues.get(maxGapIndex + 1)) / 2.0;
+    }
+
+    private int findMaxGapIndex(List<Integer> sortedValues) {
+        int maxGapIndex = 0;
+        int maxGap = -1;
+        
+        for (int i = 0; i < sortedValues.size() - 1; i++) {
+            int currentGap = sortedValues.get(i + 1) - sortedValues.get(i);
+            if (currentGap > maxGap) {
+                maxGap = currentGap;
+                maxGapIndex = i;
+            }
+        }
+        
+        return maxGapIndex;
+    }
+
+    private double calculateSingleDurationThreshold(int duration) {
+        return (duration < config.getSingleDurationThreshold()) 
+            ? duration + config.getDefaultThresholdOffset() 
+            : duration - config.getDefaultThresholdOffset();
+    }
+
+    private ThresholdPair calculateZeroThresholds(List<Integer> zeros, List<Integer> ones) {
+        if (zeros.isEmpty()) {
+            return new ThresholdPair(config.getMorseTimeUnitMultiplierLow(), config.getMorseTimeUnitMultiplierHigh());
+        }
+        
+        if (zeros.size() < 2) {
+            return calculateDefaultZeroThresholds(ones);
+        }
+        
+        return calculateZeroThresholdsByGapAnalysis(zeros);
+    }
+
+    private ThresholdPair calculateDefaultZeroThresholds(List<Integer> ones) {
+        int minOne = ones.stream().min(Integer::compare).orElse(1);
+        double lowThreshold = minOne * config.getMorseTimeUnitMultiplierLow();
+        double highThreshold = minOne * config.getMorseTimeUnitMultiplierHigh();
+        return new ThresholdPair(lowThreshold, highThreshold);
+    }
+
+    private ThresholdPair calculateZeroThresholdsByGapAnalysis(List<Integer> zeros) {
+        List<Integer> sortedUniqueZeros = zeros.stream().distinct().sorted().toList();
+        
+        if (sortedUniqueZeros.size() < 2) {
+            return calculateDefaultZeroThresholds(List.of(1));
+        }
+        
+        int maxGapIndex = findMaxGapIndex(sortedUniqueZeros);
+        
+        if (maxGapIndex >= sortedUniqueZeros.size() - 1) {
+            maxGapIndex = sortedUniqueZeros.size() - 2;
+        }
+        
+        double highThreshold = (sortedUniqueZeros.get(maxGapIndex) + sortedUniqueZeros.get(maxGapIndex + 1)) / 2.0;
+        double lowThreshold = findSecondGapThreshold(sortedUniqueZeros, maxGapIndex, highThreshold);
+        
+        return ensureValidThresholdOrder(lowThreshold, highThreshold);
+    }
+
+    private double findSecondGapThreshold(List<Integer> sortedZeros, int maxGapIndex, double highThreshold) {
+        if (maxGapIndex <= 0) {
+            return (sortedZeros.getFirst() + highThreshold) / 2.0;
+        }
+        
+        int secondMaxGap = -1;
+        int secondGapIndex = -1;
+        
+        for (int i = 0; i < maxGapIndex; i++) {
+            int gap = sortedZeros.get(i + 1) - sortedZeros.get(i);
+            if (gap > secondMaxGap) {
+                secondMaxGap = gap;
+                secondGapIndex = i;
+            }
+        }
+        
+        if (secondGapIndex != -1) {
+            return (sortedZeros.get(secondGapIndex) + sortedZeros.get(secondGapIndex + 1)) / 2.0;
+        } else {
+            return (sortedZeros.getFirst() + highThreshold) / 2.0;
+        }
+    }
+
+    private ThresholdPair ensureValidThresholdOrder(double lowThreshold, double highThreshold) {
+        if (lowThreshold >= highThreshold) {
+            lowThreshold = highThreshold / config.getThresholdSafetyFactor();
+        }
+        return new ThresholdPair(lowThreshold, highThreshold);
+    }
+
+    private String buildMorseString(String[] parts, double oneThreshold, ThresholdPair zeroThresholds) {
+        StringBuilder morseBuilder = new StringBuilder();
+        
+        for (String part : parts) {
+            int length = part.length();
+            
+            if (part.charAt(0) == '1') {
+                morseBuilder.append(length > oneThreshold ? config.getMorseDash() : config.getMorseDot());
+            } else {
+                appendMorseSpacing(morseBuilder, length, zeroThresholds);
+            }
+        }
+        
+        return morseBuilder.toString();
+    }
+
+    private void appendMorseSpacing(StringBuilder builder, int length, ThresholdPair thresholds) {
+        if (length >= thresholds.high()) {
+            builder.append(config.getMorseWordSeparator());
+        } else if (length >= thresholds.low()) {
+            builder.append(config.getMorseLetterSeparator());
+        }
+    }
+
+    private String normalizeUnicodeCharacters(String morseCode) {
+        return morseCode.replace(config.getUnicodeDot(), config.getMorseDot().charAt(0))
+                       .replace(config.getUnicodeDash(), config.getMorseDash().charAt(0));
+    }
+
+    private String decodeMorseWords(String normalizedMorse) {
+        return Arrays.stream(normalizedMorse.trim().split(config.getMorseWordSeparator()))
+                .map(this::decodeMorseWord)
+                .collect(Collectors.joining(config.getMorseLetterSeparator()));
+    }
+
+    private String decodeMorseWord(String word) {
+        return Arrays.stream(word.split(config.getMorseLetterSeparator()))
+                .map(MorseCode::get)
+                .collect(Collectors.joining());
+    }
+
+    // === Inner Classes ===
+
+    /**
+     * Record to hold signal duration data.
+     */
+    private record SignalDurations(List<Integer> ones, List<Integer> zeros) {}
+
+    /**
+     * Record to hold threshold pair data.
+     */
+    private record ThresholdPair(double low, double high) {}
 }
