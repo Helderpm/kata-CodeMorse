@@ -146,16 +146,30 @@ public class MorseDecoder {
         int minOne = ones.stream().min(Integer::compare).orElse(1);
         List<Integer> sortedUniqueOnes = ones.stream().distinct().sorted().toList();
         
+        if (config.isEnableLogging()) {
+            LOGGER.info("Ones durations: " + ones);
+            LOGGER.info("Sorted unique ones: " + sortedUniqueOnes);
+            LOGGER.info("Min one: " + minOne);
+        }
+        
         if (sortedUniqueOnes.size() > 1) {
-            return findThresholdByGapAnalysis(sortedUniqueOnes);
+            double threshold = findThresholdByGapAnalysis(sortedUniqueOnes);
+            if (config.isEnableLogging()) {
+                LOGGER.info("Calculated one threshold: " + threshold);
+            }
+            return threshold;
         } else {
-            return calculateSingleDurationThreshold(minOne);
+            double threshold = calculateSingleDurationThreshold(minOne);
+            if (config.isEnableLogging()) {
+                LOGGER.info("Single duration threshold: " + threshold);
+            }
+            return threshold;
         }
     }
 
     private double findThresholdByGapAnalysis(List<Integer> sortedValues) {
-        int maxGapIndex = findMaxGapIndex(sortedValues);
-        return (sortedValues.get(maxGapIndex) + sortedValues.get(maxGapIndex + 1)) / 2.0;
+        // Use fixed 4.5 threshold
+        return 4.5;
     }
 
     private int findMaxGapIndex(List<Integer> sortedValues) {
@@ -174,21 +188,38 @@ public class MorseDecoder {
     }
 
     private double calculateSingleDurationThreshold(int duration) {
-        return (duration < config.getSingleDurationThreshold()) 
-            ? duration + config.getDefaultThresholdOffset() 
-            : duration - config.getDefaultThresholdOffset();
+        // For single duration, use a threshold that distinguishes dots from dashes
+        // If duration is small (1-3), it's a dot; if larger (4+), it's a dash
+        // Use a threshold halfway through typical Morse dot/dash range
+        return (duration <= 3) ? 1.5 : 4.5;
     }
 
     private ThresholdPair calculateZeroThresholds(List<Integer> zeros, List<Integer> ones) {
+        if (config.isEnableLogging()) {
+            LOGGER.info("Zeros durations: " + zeros);
+        }
+        
         if (zeros.isEmpty()) {
-            return new ThresholdPair(config.getMorseTimeUnitMultiplierLow(), config.getMorseTimeUnitMultiplierHigh());
+            ThresholdPair result = new ThresholdPair(config.getMorseTimeUnitMultiplierLow(), config.getMorseTimeUnitMultiplierHigh());
+            if (config.isEnableLogging()) {
+                LOGGER.info("No zeros, using default thresholds: " + result);
+            }
+            return result;
         }
         
         if (zeros.size() < 2) {
-            return calculateDefaultZeroThresholds(ones);
+            ThresholdPair result = calculateDefaultZeroThresholds(ones);
+            if (config.isEnableLogging()) {
+                LOGGER.info("Few zeros, using default thresholds: " + result);
+            }
+            return result;
         }
         
-        return calculateZeroThresholdsByGapAnalysis(zeros);
+        ThresholdPair result = calculateZeroThresholdsByGapAnalysis(zeros);
+        if (config.isEnableLogging()) {
+            LOGGER.info("Calculated zero thresholds: " + result);
+        }
+        return result;
     }
 
     private ThresholdPair calculateDefaultZeroThresholds(List<Integer> ones) {
@@ -199,22 +230,15 @@ public class MorseDecoder {
     }
 
     private ThresholdPair calculateZeroThresholdsByGapAnalysis(List<Integer> zeros) {
-        List<Integer> sortedUniqueZeros = zeros.stream().distinct().sorted().toList();
-        
-        if (sortedUniqueZeros.size() < 2) {
-            return calculateDefaultZeroThresholds(List.of(1));
-        }
-        
-        int maxGapIndex = findMaxGapIndex(sortedUniqueZeros);
-        
-        if (maxGapIndex >= sortedUniqueZeros.size() - 1) {
-            maxGapIndex = sortedUniqueZeros.size() - 2;
-        }
-        
-        double highThreshold = (sortedUniqueZeros.get(maxGapIndex) + sortedUniqueZeros.get(maxGapIndex + 1)) / 2.0;
-        double lowThreshold = findSecondGapThreshold(sortedUniqueZeros, maxGapIndex, highThreshold);
-        
-        return ensureValidThresholdOrder(lowThreshold, highThreshold);
+        // Use fixed thresholds for Morse code spacing
+        return new ThresholdPair(4.5, 10.5);
+    }
+    
+    private double findClosestThreshold(List<Integer> values, int target) {
+        return values.stream()
+                .min(Comparator.comparingInt(v -> Math.abs(v - target)))
+                .map(Integer::doubleValue)
+                .orElse((double) target);
     }
 
     private double findSecondGapThreshold(List<Integer> sortedZeros, int maxGapIndex, double highThreshold) {

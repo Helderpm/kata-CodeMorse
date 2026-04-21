@@ -45,30 +45,30 @@ public class MorseCode {
         DICTIONARY.put("-.--", "Y");
         DICTIONARY.put("--..", "Z");
         
-//        // Chiffres
-//        DICTIONARY.put("-----", "0");
-//        DICTIONARY.put(".----", "1");
-//        DICTIONARY.put("..---", "2");
-//        DICTIONARY.put("...--", "3");
-//        DICTIONARY.put("....-", "4");
-//        DICTIONARY.put(".....", "5");
-//        DICTIONARY.put("-....", "6");
-//        DICTIONARY.put("--...", "7");
-//        DICTIONARY.put("---..", "8");
-//        DICTIONARY.put("----.", "9");
-//
-//        // Ponctuation & Spécial
-//        DICTIONARY.put(".-.-.-", ".");
-//        DICTIONARY.put("--..--", ",");
-//        DICTIONARY.put("---...", ":");
-//        DICTIONARY.put("..--..", "?");
-//        DICTIONARY.put(".----.", "'");
-//        DICTIONARY.put("-....-", "-");
-//        DICTIONARY.put("-..-.", "/");
-//        DICTIONARY.put(".-..-.", "\"");
-//        DICTIONARY.put(".--.-.", "@");
-//        DICTIONARY.put("-...-", "=");
-//        DICTIONARY.put("...---...", "SOS");
+        // Chiffres
+        DICTIONARY.put("-----", "0");
+        DICTIONARY.put(".----", "1");
+        DICTIONARY.put("..---", "2");
+        DICTIONARY.put("...--", "3");
+        DICTIONARY.put("....-", "4");
+        DICTIONARY.put(".....", "5");
+        DICTIONARY.put("-....", "6");
+        DICTIONARY.put("--...", "7");
+        DICTIONARY.put("---..", "8");
+        DICTIONARY.put("----.", "9");
+
+        // Ponctuation & Spécial
+        DICTIONARY.put(".-.-.-", ".");
+        DICTIONARY.put("--..--", ",");
+        DICTIONARY.put("---...", ":");
+        DICTIONARY.put("..--..", "?");
+        DICTIONARY.put(".----.", "'");
+        DICTIONARY.put("-....-", "-");
+        DICTIONARY.put("-..-.", "/");
+        DICTIONARY.put(".-..-.", "\"");
+        DICTIONARY.put(".--.-.", "@");
+        DICTIONARY.put("-...-", "=");
+        DICTIONARY.put("...---...", "SOS");
     }
     
     /**

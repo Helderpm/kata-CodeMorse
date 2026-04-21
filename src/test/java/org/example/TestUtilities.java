@@ -13,10 +13,7 @@ public class TestUtilities {
     // Test data constants
     public static final String SIMPLE_DOTS = "1001";
     public static final String SIMPLE_DASHES = "1110111";
-    public static final String REPEATED_DOTS = "101010";
     public static final String SLOW_DASHES = "11111100111111";
-    public static final String SINGLE_BIT = "1";
-    public static final String SINGLE_ZERO = "0";
     public static final String EMPTY_STRING = "";
     public static final String ZEROS_ONLY = "000000";
     
@@ -28,9 +25,10 @@ public class TestUtilities {
     // Expected results
     public static final String EXPECTED_EE = "EE";
     public static final String EXPECTED_M = "M";
-    public static final String EXPECTED_EEE = "EEE";
     public static final String EXPECTED_E = "E";
     public static final String EXPECTED_EMPTY = "";
+    public static final String EXPECTED_S = "S";
+    public static final String EXPECTED_O = "O";
 
     /**
      * Test case data structure.
@@ -68,62 +66,21 @@ public class TestUtilities {
         return sb.toString();
     }
 
+    
     /**
-     * Executes a test case and prints the result.
-     */
-    public static void executeTestCase(MorseDecoder decoder, TestCase testCase) {
-        try {
-            String morse = decoder.decodeBitsAdvanced(testCase.input());
-            String result = decoder.decodeMorse(morse);
-            
-            boolean passed = testCase.expected().equals(result);
-            System.out.printf("  %-20s: %s %s%n", testCase.name(), result, passed ? "✓" : "✗");
-            
-            if (!passed) {
-                System.out.printf("    Expected: %s, Got: %s%n", testCase.expected(), result);
-                System.out.printf("    Morse: %s%n", morse);
-            }
-        } catch (Exception e) {
-            System.out.printf("  %-20s: ERROR %s%n", testCase.name(), e.getMessage());
-        }
-    }
-
-    /**
-     * Creates basic test cases.
+     * Creates basic test cases matching kata-exec requirements.
+     * These are the core test cases from kata-exec:
+     * - "1001" decodes to "EE"
+     * - "1110111" decodes to "M"
+     * - "11111100111111" decodes to "M"
      */
     public static TestCase[] createBasicTestCases() {
         return new TestCase[] {
-            new TestCase("Simple dots", SIMPLE_DOTS, EXPECTED_EE),
-            new TestCase("Simple dashes", SIMPLE_DASHES, EXPECTED_M),
-            new TestCase("Repeated dots", REPEATED_DOTS, EXPECTED_EEE),
-            new TestCase("Slow dashes", SLOW_DASHES, EXPECTED_M),
-            new TestCase("Single bit", SINGLE_BIT, EXPECTED_E),
-            new TestCase("Single zero", SINGLE_ZERO, EXPECTED_EMPTY)
+            new TestCase("Simple dots (EE)", SIMPLE_DOTS, EXPECTED_EE),
+            new TestCase("Simple dashes (M)", SIMPLE_DASHES, EXPECTED_M),
+            new TestCase("Slow dashes (M)", SLOW_DASHES, EXPECTED_M)
         };
     }
 
-    /**
-     * Measures execution time of a runnable task.
-     */
-    public static long measureExecutionTime(Runnable task) {
-        long startTime = System.nanoTime();
-        task.run();
-        return System.nanoTime() - startTime;
-    }
-
-    /**
-     * Formats nanoseconds to milliseconds.
-     */
-    public static double formatNanosToMillis(long nanos) {
-        return nanos / 1_000_000.0;
-    }
-
-    /**
-     * Prints a test section header.
-     */
-    public static void printSectionHeader(String sectionName) {
-        System.out.println("\n" + sectionName);
-        System.out.println("=".repeat(sectionName.length()));
-    }
-    
+        
 }

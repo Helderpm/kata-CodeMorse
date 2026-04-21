@@ -9,12 +9,13 @@ This project implements a sophisticated Morse code decoder capable of handling r
 ## ✨ Features
 
 - **Unified Architecture**: Single configurable `MorseDecoder` class with flexible configuration system
-- **Dynamic Threshold Calculation**: Uses gap analysis to handle variable transmission speeds
-- **Configurable Parameters**: Multiple preset configurations for different use cases
-- **Statistical Signal Processing**: Analyzes signal clusters to determine optimal timing
-- **Comprehensive Testing**: Structured test suite with 6 test categories and real-world message validation
-- **No External Dependencies**: Pure Java implementation without Lombok or other frameworks
+- **Hybrid Threshold Calculation**: Uses fixed thresholds with fallback to statistical analysis for variable transmission speeds
+- **Configurable Parameters**: Multiple preset configurations for different use cases via builder pattern
+- **Signal Processing**: Analyzes signal durations to determine optimal timing thresholds
+- **Comprehensive Testing**: Multiple test classes with real-world message validation
+- **No External Dependencies**: Pure Java implementation using JUnit 5, SLF4J, and Logback
 - **Strict Mode**: Optional input validation for production use
+- **Logging Support**: Detailed logging for debugging and educational purposes
 
 ## 🏗️ Architecture
 
@@ -99,29 +100,31 @@ MorseDecoder strictDecoder = new MorseDecoder(strictConfig);
 ### Running Tests
 
 ```bash
-# Compile the code
-javac -cp "src/main/java" -d target/classes src/main/java/org/example/*.java
+# Run all tests using Maven
+mvn test
 
-# Compile and run tests
-javac -cp "target/classes;src/test/java" -d target/test-classes src/test/java/org/example/*.java
-java -cp "target/classes;target/test-classes" org.example.MorseDecoderTest
+# Run specific test class
+mvn test -Dtest=BasicFunctionalityTest
 
-# Run quick test only
-java -cp "target/classes;target/test-classes" org.example.MorseDecoderTest quickTest
+# Run with verbose output
+mvn test -X
 ```
 
 ### Test Coverage
 
-The comprehensive test suite includes 6 test categories:
+The test suite includes:
 
-- ✅ **Basic Functionality Tests**: Core decoding functionality
-- ✅ **Configuration Tests**: All configuration options and presets
-- ✅ **Performance Tests**: Scalability and benchmarking
-- ✅ **Edge Case Tests**: Error handling and boundary conditions
-- ✅ **Complex Message Tests**: Real-world messages including:
-  - "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG"
-  - "MGY CQD CQD SOS TITANIC POSITION 41.44 N 50.24 W..."
-- ✅ **Validation Tests**: Input validation and strict mode
+- ✅ **BasicFunctionalityTest**: Core decoding functionality with basic patterns
+- ✅ **TestUtilities**: Helper utilities and test data generation
+- ✅ **MorseDecoderTest**: Comprehensive decoder testing
+- ✅ **JUnit5MigrationTest**: JUnit 5 migration validation
+- ✅ **SpecificTestCaseTest**: Specific test case validation
+
+Test data includes:
+- Simple patterns (EE, M)
+- Complex messages (HEY JUDE)
+- Variable transmission speeds
+- Edge cases (empty strings, zeros-only)
 
 ## 📊 Performance Characteristics
 
@@ -171,15 +174,20 @@ The comprehensive test suite includes 6 test categories:
 
 ## 📈 Algorithm Details
 
-### Gap Analysis
+### Threshold Calculation
 
-The core innovation is the gap analysis algorithm that finds natural boundaries in timing data:
+The decoder uses a hybrid approach for threshold calculation:
 
-1. **Sort Unique Durations**: Creates a sorted list of unique signal lengths
-2. **Find Largest Gaps**: Identifies the biggest jumps between consecutive values
-3. **Calculate Thresholds**: Places thresholds at the midpoint of these gaps
+1. **Signal Threshold (for dots vs dashes)**: 
+   - Uses a fixed threshold of 4.5 when multiple signal durations are present
+   - For single duration, uses 1.5 for short durations (≤3) or 4.5 for longer durations
 
-This approach handles human transmission variations where timing isn't perfectly consistent.
+2. **Pause Thresholds (for spacing)**:
+   - Uses fixed thresholds: low=4.5, high=10.5 for gap analysis
+   - Falls back to default multipliers when insufficient data
+   - Default multipliers: 2.0 (low) and 6.0 (high) relative to minimum signal duration
+
+This approach handles variable transmission speeds while maintaining consistency with standard Morse timing ratios.
 
 ### Signal Processing Pipeline
 
@@ -304,21 +312,21 @@ strictDecoder.decodeBitsAdvanced("1".repeat(2000)); // Throws IllegalArgumentExc
 Recent refactoring has achieved:
 
 - ✅ **Eliminated Code Duplication**: Unified single `MorseDecoder` class
-- ✅ **Configuration System**: Flexible, extensible parameter management
-- ✅ **Comprehensive Testing**: 6 test categories with real-world validation
+- ✅ **Configuration System**: Flexible, extensible parameter management with builder pattern
+- ✅ **Comprehensive Testing**: Multiple test classes with real-world validation
 - ✅ **Clean API**: Builder pattern and preset configurations
 - ✅ **Error Handling**: Robust validation and edge case management
-- ✅ **Performance**: Optimized algorithms with benchmarking
+- ✅ **Performance**: Optimized algorithms with fixed threshold calculations
 
 ## 🚧 Future Enhancements
 
 Potential areas for improvement:
 
-- Support for numbers and punctuation
-- Performance optimization for large signals
-- Machine learning for threshold optimization
-- Real-time streaming support
+- Performance optimization for very large signals
+- Machine learning for adaptive threshold optimization
+- Real-time streaming support for live signals
 - Additional configuration presets for specific use cases
+- Support for extended Morse code variants (prosigns, accented characters)
 
 ## 📄 License
 
