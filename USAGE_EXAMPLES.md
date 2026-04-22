@@ -1,529 +1,140 @@
-# Morse Decoder Usage Examples
+# Morse Decoder — Usage Examples
 
-This document provides comprehensive examples of how to use the refactored Morse decoder in various scenarios.
-
-## 📚 Table of Contents
-
-1. [Basic Usage](#basic-usage)
-2. [Advanced Scenarios](#advanced-scenarios)
-3. [Error Handling](#error-handling)
-4. [Performance Considerations](#performance-considerations)
-5. [Integration Examples](#integration-examples)
-6. [Custom Extensions](#custom-extensions)
-
-## 🚀 Basic Usage
-
-### Simple Decoding
+## Basic Decoding
 
 ```java
-import org.example.MorseDecoder;
+MorseDecoder decoder = new MorseDecoder();
 
-public class BasicExample {
-    public static void main(String[] args) {
-        MorseDecoder decoder = new MorseDecoder();
-        
-        // Example 1: Simple dots and dashes
-        String bits1 = "1001";
-        String morse1 = decoder.decodeBitsAdvanced(bits1);
-        String text1 = decoder.decodeMorse(morse1);
-        System.out.println("Input: " + bits1 + " → Morse: " + morse1 + " → Text: " + text1);
-        // Output: Input: 1001 → Morse: . . → Text: EE
-        
-        // Example 2: Simple dashes
-        String bits2 = "1110111";
-        String morse2 = decoder.decodeBitsAdvanced(bits2);
-        String text2 = decoder.decodeMorse(morse2);
-        System.out.println("Input: " + bits2 + " → Morse: " + morse2 + " → Text: " + text2);
-        // Output: Input: 1110111 → Morse: -- → Text: M
-    }
-}
+// Bits → Morse → Text
+String morse = decoder.decodeBitsAdvanced("1001");
+String text  = decoder.decodeMorse(morse);
+// morse → ". ."   text → "EE"
+
+// One-liner
+String result = decoder.decodeMorse(decoder.decodeBitsAdvanced("1110111"));
+// "M"
 ```
 
-### Complete Message Decoding
+## Real Messages
 
 ```java
-public class MessageExample {
-    public static void main(String[] args) {
-        MorseDecoder decoder = new MorseDecoder();
-        
-        // The classic "HEY JUDE" message
-        String heyJudeBits = "0000000011011010011100000110000001111110100111110011111100000000000111011111111011111011111000000101100011111100000111110011101100000100000";
-        
-        // Step-by-step decoding
-        String morse = decoder.decodeBitsAdvanced(heyJudeBits);
-        System.out.println("Morse code: " + morse);
-        // Output: .... . -.--   .--- ..- -.. .
-        
-        String text = decoder.decodeMorse(morse);
-        System.out.println("Decoded text: " + text);
-        // Output: HEY JUDE
-        
-        // One-line decoding
-        String oneLineResult = decoder.decodeMorse(decoder.decodeBitsAdvanced(heyJudeBits));
-        System.out.println("One-line result: " + oneLineResult);
-        // Output: HEY JUDE
-    }
-}
+MorseDecoder decoder = new MorseDecoder();
+
+// HEY JUDE
+String bits = "0000000011011010011100000110000001111110100111110011111100000000000111011111111011111011111000000101100011111100000111110011101100000100000";
+System.out.println(decoder.decodeMorse(decoder.decodeBitsAdvanced(bits)));
+// HEY JUDE
+
+// THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG
+String pangram = "00000000000111111100000011010001110111000000001110000000000000000001111111011111100001101111100000111100111100011111100000001011100000011111110010001111100110000011111100101111100000000000000111111100001111010110000011000111110010000011111110001111110011111110000010001111110001111111100000001111111101110000000000000010110000111111110111100000111110111110011111110000000011111001011011111000000000000111011111011111011111000000010001001111100000111110111111110000001110011111100011111010000001100001001000000000000000000111111110011111011111100000010001001000011111000000100000000101111101000000000000011111100000011110100001001100000000001110000000000000001101111101111000100000100001111111110000000001111110011111100011101100000111111000011011111000111111000000000000000001111110000100110000011111101111111011111111100000001111110001111100001000000000000000000000000000000000000000000000000000000000000";
+System.out.println(decoder.decodeMorse(decoder.decodeBitsAdvanced(pangram)));
+// THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG
 ```
 
-## 🔧 Advanced Scenarios
+## Slow / Variable Speed Signals
 
-### Variable Transmission Speeds
+The decoder adapts automatically — no configuration change needed.
 
 ```java
-public class VariableSpeedExample {
-    public static void main(String[] args) {
-        MorseDecoder decoder = new MorseDecoder();
-        
-        // Fast transmission - short dots and dashes
-        String fastSignal = "101010"; // EE (fast)
-        String fastResult = decoder.decodeMorse(decoder.decodeBitsAdvanced(fastSignal));
-        System.out.println("Fast signal: " + fastResult);
-        
-        // Slow transmission - long dots and dashes
-        String slowSignal = "111111000111111000"; // EE (slow)
-        String slowResult = decoder.decodeMorse(decoder.decodeBitsAdvanced(slowSignal));
-        System.out.println("Slow signal: " + slowResult);
-        
-        // Mixed speeds in same message
-        String mixedSignal = "101111110001111110101"; // EE with varying speeds
-        String mixedResult = decoder.decodeMorse(decoder.decodeBitsAdvanced(mixedSignal));
-        System.out.println("Mixed speed signal: " + mixedResult);
-    }
-}
+MorseDecoder decoder = new MorseDecoder();
+
+// Normal speed M
+decoder.decodeMorse(decoder.decodeBitsAdvanced("1110111"));
+// "M"
+
+// Slow speed M (6-unit pulses instead of 3)
+decoder.decodeMorse(decoder.decodeBitsAdvanced("11111100111111"));
+// "M"
 ```
 
-### Complex Message Processing
+## Configuration Presets
 
 ```java
-public class ComplexMessageExample {
-    public static void main(String[] args) {
-        MorseDecoder decoder = new MorseDecoder();
-        
-        // The famous "THE QUICK BROWN FOX" message
-        String complexBits = "00000000000111111100000011010001110111000000001110000000000000000001111111011111100001101111100000111100111100011111100000001011100000011111110010001111100110000011111100101111100000000000000111111100001111010110000011000111110010000011111110001111110011111110000010001111110001111111100000001111111101110000000000000010110000111111110111100000111110111110011111110000000011111001011011111000000000000111011111011111011111000000010001001111100000111110111111110000001110011111100011111010000001100001001000000000000000000111111110011111011111100000010001001000011111000000100000000101111101000000000000011111100000011110100001001100000000001110000000000000001101111101111000100000100001111111110000000001111110011111100011101100000111111000011011111000111111000000000000000001111110000100110000011111101111111011111111100000001111110001111100001000000000000000000000000000000000000000000000000000000000000";
-        
-        String result = decoder.decodeMorse(decoder.decodeBitsAdvanced(complexBits));
-        System.out.println("Complex message: " + result);
-        // Output: THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG
-    }
-}
+// Balanced — general use
+MorseDecoder decoder = new MorseDecoder();
+
+// Optimised for fast transmissions
+MorseDecoder fast = new MorseDecoder(MorseDecoderConfig.forFastTransmission());
+
+// Optimised for slow transmissions
+MorseDecoder slow = new MorseDecoder(MorseDecoderConfig.forSlowTransmission());
+
+// Robust for noisy signals
+MorseDecoder noisy = new MorseDecoder(MorseDecoderConfig.forNoisyEnvironment());
+
+// High-accuracy with strict validation
+MorseDecoder precise = new MorseDecoder(MorseDecoderConfig.forPrecisionDecoding());
+
+// Logging enabled — useful for debugging threshold decisions
+MorseDecoder educational = new MorseDecoder(MorseDecoderConfig.forEducationalUse());
 ```
 
-### Real-time Processing Simulation
+## Custom Configuration
 
 ```java
-public class RealTimeExample {
-    public static void main(String[] args) {
-        MorseDecoder decoder = new MorseDecoder();
-        
-        // Simulate receiving chunks of data
-        String[] chunks = {
-            "000000001101101001110000011000000111111010011111001111110000000000",
-            "0111011111111011111011111000000101100011111100000111110011101100000100000"
-        };
-        
-        StringBuilder receivedSignal = new StringBuilder();
-        
-        for (String chunk : chunks) {
-            receivedSignal.append(chunk);
-            
-            // Try to decode what we have so far
-            String currentMorse = decoder.decodeBitsAdvanced(receivedSignal.toString());
-            String currentText = decoder.decodeMorse(currentMorse);
-            
-            System.out.println("Received chunk, current text: " + currentText);
-        }
-        
-        // Final complete message
-        String finalResult = decoder.decodeMorse(decoder.decodeBitsAdvanced(receivedSignal.toString()));
-        System.out.println("Final message: " + finalResult);
-    }
-}
+MorseDecoderConfig config = new MorseDecoderConfig.Builder()
+    .enableLogging(false)
+    .strictMode(true)
+    .maxSignalLength(5000)
+    .morseTimeUnitMultipliers(2.0, 6.0)
+    .thresholdSafetyFactor(2.5)
+    .build();
+
+MorseDecoder decoder = new MorseDecoder(config);
 ```
 
-## ⚠️ Error Handling
+## Strict Mode
 
-### Robust Error Handling
+Strict mode validates the input and throws `IllegalArgumentException` on bad data.
 
 ```java
-public class ErrorHandlingExample {
-    public static void main(String[] args) {
-        MorseDecoder decoder = new MorseDecoder();
-        
-        // Handle null input
-        String nullResult = decoder.decodeMorse(null);
-        System.out.println("Null input result: '" + nullResult + "'");
-        // Output: Null input result: ''
-        
-        // Handle empty strings
-        String emptyBitsResult = decoder.decodeBitsAdvanced("");
-        String emptyMorseResult = decoder.decodeMorse("");
-        System.out.println("Empty bits result: '" + emptyBitsResult + "'");
-        System.out.println("Empty morse result: '" + emptyMorseResult + "'");
-        // Output: Empty bits result: ''
-        // Output: Empty morse result: ''
-        
-        // Handle zeros-only input
-        String zerosResult = decoder.decodeBitsAdvanced("000000");
-        System.out.println("Zeros-only result: '" + zerosResult + "'");
-        // Output: Zeros-only result: ''
-        
-        // Handle invalid Morse patterns
-        String invalidMorse = decoder.decodeMorse(".... --- ... ...");
-        System.out.println("Invalid Morse result: '" + invalidMorse + "'");
-        // Output: Invalid Morse result: 'HOSS' (or partial decoding)
-    }
-}
+MorseDecoderConfig strict = new MorseDecoderConfig.Builder()
+    .strictMode(true)
+    .maxSignalLength(1000)
+    .build();
+
+MorseDecoder decoder = new MorseDecoder(strict);
+
+decoder.decodeBitsAdvanced("10102");          // throws — invalid character '2'
+decoder.decodeBitsAdvanced("1".repeat(2000)); // throws — exceeds maxSignalLength
 ```
 
-### Input Validation
+## Edge Cases
 
 ```java
-public class ValidationExample {
-    public static void main(String[] args) {
-        MorseDecoder decoder = new MorseDecoder();
-        
-        String[] testInputs = {
-            "1001",           // Valid: EE
-            "1110111",        // Valid: M
-            "",               // Empty
-            "000000",         // Zeros only
-            "101010101010",   // Long pattern
-            "1",              // Single bit
-            "0",              // Single zero
-            "101",            // Odd length
-            "1100110011"      // Repeated pattern
-        };
-        
-        for (String input : testInputs) {
-            try {
-                String morse = decoder.decodeBitsAdvanced(input);
-                String text = decoder.decodeMorse(morse);
-                System.out.printf("Input: %-12s → Morse: %-20s → Text: %s%n", 
-                    "\"" + input + "\"", "\"" + morse + "\"", "\"" + text + "\"");
-            } catch (Exception e) {
-                System.out.printf("Input: %-12s → Error: %s%n", "\"" + input + "\"", e.getMessage());
-            }
-        }
-    }
-}
+MorseDecoder decoder = new MorseDecoder();
+
+decoder.decodeBitsAdvanced("");        // ""
+decoder.decodeBitsAdvanced("000000"); // ""
+decoder.decodeMorse(null);            // ""
+decoder.decodeMorse("   ");           // ""
 ```
 
-## ⚡ Performance Considerations
-
-### Batch Processing
+## Batch Processing
 
 ```java
-public class BatchProcessingExample {
-    public static void main(String[] args) {
-        MorseDecoder decoder = new MorseDecoder();
-        
-        // Process multiple messages efficiently
-        String[] messages = {
-            "1001",                    // EE
-            "1110111",                 // M
-            "0000000011011010011100000110000001111110100111110011111100000000000111011111111011111011111000000101100011111100000111110011101100000100000", // HEY JUDE
-            "101010",                  // EE (fast)
-            "111111000111111000"       // EE (slow)
-        };
-        
-        long startTime = System.nanoTime();
-        
-        for (String message : messages) {
-            String result = decoder.decodeMorse(decoder.decodeBitsAdvanced(message));
-            System.out.println("Decoded: " + result);
-        }
-        
-        long endTime = System.nanoTime();
-        double totalTime = (endTime - startTime) / 1_000_000.0;
-        
-        System.out.printf("Processed %d messages in %.2f ms (avg: %.2f ms per message)%n",
-            messages.length, totalTime, totalTime / messages.length);
-    }
+MorseDecoder decoder = new MorseDecoder();
+
+String[] signals = { "1001", "1110111", "11111100111111" };
+
+for (String signal : signals) {
+    System.out.println(decoder.decodeMorse(decoder.decodeBitsAdvanced(signal)));
 }
+// EE
+// M
+// M
 ```
 
-### Memory Optimization
+## File Decoding
 
 ```java
-public class MemoryOptimizationExample {
-    public static void main(String[] args) {
-        MorseDecoder decoder = new MorseDecoder();
-        
-        // Process large signals without memory leaks
-        for (int i = 0; i < 1000; i++) {
-            String largeSignal = generateLargeSignal(10000);
-            String result = decoder.decodeMorse(decoder.decodeBitsAdvanced(largeSignal));
-            
-            // Clear references to help garbage collection
-            largeSignal = null;
-            result = null;
-            
-            if (i % 100 == 0) {
-                System.gc(); // Suggest garbage collection periodically
-                System.out.println("Processed " + i + " signals");
-            }
-        }
-    }
-    
-    private static String generateLargeSignal(int length) {
-        // Generate a large but realistic signal
-        StringBuilder sb = new StringBuilder(length);
-        Random random = new Random();
-        
-        for (int i = 0; i < length; i++) {
-            sb.append(random.nextBoolean() ? '1' : '0');
-        }
-        
-        return sb.toString();
-    }
-}
-```
-
-## 🔌 Integration Examples
-
-### Integration with File I/O
-
-```java
-import java.io.*;
 import java.nio.file.*;
 
-public class FileIntegrationExample {
-    public static void main(String[] args) throws IOException {
-        MorseDecoder decoder = new MorseDecoder();
-        
-        // Read binary signal from file
-        String signal = Files.readString(Paths.get("input_signal.txt"));
-        
-        // Decode the signal
-        String morse = decoder.decodeBitsAdvanced(signal);
-        String text = decoder.decodeMorse(morse);
-        
-        // Write results to files
-        Files.writeString(Paths.get("output_morse.txt"), morse);
-        Files.writeString(Paths.get("output_text.txt"), text);
-        
-        System.out.println("Decoding complete. Results saved to files.");
-        System.out.println("Morse: " + morse);
-        System.out.println("Text: " + text);
-    }
-}
+MorseDecoder decoder = new MorseDecoder();
+
+String bits   = Files.readString(Path.of("signal.txt")).strip();
+String morse  = decoder.decodeBitsAdvanced(bits);
+String text   = decoder.decodeMorse(morse);
+
+Files.writeString(Path.of("result.txt"), text);
 ```
-
-### Integration with Network Communication
-
-```java
-import java.net.*;
-import java.io.*;
-
-public class NetworkIntegrationExample {
-    public static void main(String[] args) {
-        MorseDecoder decoder = new MorseDecoder();
-        
-        try (ServerSocket serverSocket = new ServerSocket(8080)) {
-            System.out.println("Morse decoder server listening on port 8080");
-            
-            while (true) {
-                try (Socket clientSocket = serverSocket.accept();
-                     BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                     PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
-                    
-                    // Read binary signal from client
-                    String signal = in.readLine();
-                    
-                    // Decode and send back result
-                    String result = decoder.decodeMorse(decoder.decodeBitsAdvanced(signal));
-                    out.println(result);
-                    
-                    System.out.println("Decoded signal: " + signal + " → " + result);
-                }
-            }
-        } catch (IOException e) {
-            System.err.println("Server error: " + e.getMessage());
-        }
-    }
-}
-```
-
-### Integration with GUI Applications
-
-```java
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
-
-public class GUIIntegrationExample {
-    private static MorseDecoder decoder = new MorseDecoder();
-    
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(GUIIntegrationExample::createAndShowGUI);
-    }
-    
-    private static void createAndShowGUI() {
-        JFrame frame = new JFrame("Morse Decoder");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(600, 400);
-        
-        // Input area for binary signal
-        JTextArea inputArea = new JTextArea(10, 50);
-        JScrollPane inputScroll = new JScrollPane(inputArea);
-        
-        // Output area for decoded text
-        JTextArea outputArea = new JTextArea(5, 50);
-        outputArea.setEditable(false);
-        JScrollPane outputScroll = new JScrollPane(outputArea);
-        
-        // Decode button
-        JButton decodeButton = new JButton("Decode");
-        decodeButton.addActionListener(e -> {
-            String signal = inputArea.getText();
-            String result = decoder.decodeMorse(decoder.decodeBitsAdvanced(signal));
-            outputArea.setText(result);
-        });
-        
-        // Layout
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.add(new JLabel("Binary Signal:"), BorderLayout.NORTH);
-        panel.add(inputScroll, BorderLayout.CENTER);
-        
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.add(decodeButton);
-        panel.add(buttonPanel, BorderLayout.SOUTH);
-        
-        JPanel outputPanel = new JPanel(new BorderLayout());
-        outputPanel.add(new JLabel("Decoded Text:"), BorderLayout.NORTH);
-        outputPanel.add(outputScroll, BorderLayout.CENTER);
-        
-        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, panel, outputPanel);
-        frame.add(splitPane);
-        
-        frame.setVisible(true);
-    }
-}
-```
-
-## 🔧 Configuration Examples
-
-### Using Preset Configurations
-
-```java
-public class ConfigurationExample {
-    public static void main(String[] args) {
-        // Default configuration
-        MorseDecoder defaultDecoder = new MorseDecoder();
-        
-        // Fast transmission configuration
-        MorseDecoder fastDecoder = new MorseDecoder(
-            MorseDecoderConfig.forFastTransmission()
-        );
-        
-        // Slow transmission configuration
-        MorseDecoder slowDecoder = new MorseDecoder(
-            MorseDecoderConfig.forSlowTransmission()
-        );
-        
-        // Noisy environment configuration
-        MorseDecoder noisyDecoder = new MorseDecoder(
-            MorseDecoderConfig.forNoisyEnvironment()
-        );
-        
-        // Precision decoding configuration
-        MorseDecoder precisionDecoder = new MorseDecoder(
-            MorseDecoderConfig.forPrecisionDecoding()
-        );
-        
-        // Educational configuration with logging
-        MorseDecoder educationalDecoder = new MorseDecoder(
-            MorseDecoderConfig.forEducationalUse()
-        );
-    }
-}
-```
-
-### Custom Configuration with Builder
-
-```java
-public class CustomConfigExample {
-    public static void main(String[] args) {
-        // Create custom configuration using builder
-        MorseDecoderConfig customConfig = new MorseDecoderConfig.Builder()
-            .defaultThresholdOffset(0.7)
-            .morseTimeUnitMultipliers(2.5, 7.0)
-            .thresholdSafetyFactor(2.5)
-            .singleDurationThreshold(4)
-            .enableLogging(true)
-            .strictMode(false)
-            .maxSignalLength(50000)
-            .morseSymbols(".", "-")
-            .morseSeparators(" ", "   ")
-            .build();
-        
-        MorseDecoder customDecoder = new MorseDecoder(customConfig);
-        
-        // Use the decoder
-        String signal = "1001";
-        String result = customDecoder.decodeMorse(customDecoder.decodeBitsAdvanced(signal));
-        System.out.println("Custom config result: " + result);
-    }
-}
-```
-
-### Performance Monitoring Wrapper
-
-```java
-public class PerformanceMonitoringExample {
-    public static void main(String[] args) {
-        MorseDecoder decoder = new MorseDecoder();
-        
-        String[] signals = {
-            "1001",
-            "1110111",
-            "0000000011011010011100000110000001111110100111110011111100000000000111011111111011111011111000000101100011111100000111110011101100000100000"
-        };
-        
-        long totalTime = 0;
-        int count = 0;
-        
-        for (String signal : signals) {
-            long startTime = System.nanoTime();
-            String result = decoder.decodeMorse(decoder.decodeBitsAdvanced(signal));
-            long endTime = System.nanoTime();
-            
-            totalTime += (endTime - startTime);
-            count++;
-            
-            System.out.println("Decoded: " + result);
-        }
-        
-        double avgTimeMs = totalTime / (double) count / 1_000_000.0;
-        System.out.printf("Average decoding time: %.2f ms%n", avgTimeMs);
-    }
-}
-```
-
-## 📝 Best Practices
-
-1. **Always validate input** before processing
-2. **Handle null and empty inputs** gracefully
-3. **Use batch processing** for multiple messages
-4. **Monitor memory usage** with large signals
-5. **Consider caching** for repeated patterns
-6. **Log important operations** for debugging
-7. **Test with various transmission speeds**
-8. **Implement proper error handling** in production code
-
-## 🎯 Common Use Cases
-
-- **Educational tools** for learning Morse code
-- **Historical document analysis** for old telegraph messages
-- **Radio communication** software
-- **Signal processing** research
-- **Accessibility tools** for visually impaired users
-- **Emergency communication** systems
-- **Amateur radio** applications
-- **Cryptography and puzzles** involving Morse code
-
----
-
-These examples demonstrate the versatility and robustness of the refactored Morse decoder. The clean architecture makes it easy to integrate into various applications while maintaining high performance and reliability.

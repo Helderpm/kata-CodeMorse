@@ -1,80 +1,44 @@
 package org.example;
 
-
-import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Classe utilitaire pour la traduction du code Morse vers l'alphabet ASCII.
+ * Morse-to-ASCII lookup table.
  */
-public class MorseCode {
+public final class MorseCode {
 
     private MorseCode() {
-        // This utility class should not be instantiated
-        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
+        throw new UnsupportedOperationException("Utility class");
     }
 
-    private static final Map<String, String> DICTIONARY = new HashMap<>();
-    
-    static {
-        // Lettres
-        DICTIONARY.put(".-", "A");
-        DICTIONARY.put("-...", "B");
-        DICTIONARY.put("-.-.", "C");
-        DICTIONARY.put("-..", "D");
-        DICTIONARY.put(".", "E");
-        DICTIONARY.put("..-.", "F");
-        DICTIONARY.put("--.", "G");
-        DICTIONARY.put("....", "H");
-        DICTIONARY.put("..", "I");
-        DICTIONARY.put(".---", "J");
-        DICTIONARY.put("-.-", "K");
-        DICTIONARY.put(".-..", "L");
-        DICTIONARY.put("--", "M");
-        DICTIONARY.put("-.", "N");
-        DICTIONARY.put("---", "O");
-        DICTIONARY.put(".--.", "P");
-        DICTIONARY.put("--.-", "Q");
-        DICTIONARY.put(".-.", "R");
-        DICTIONARY.put("...", "S");
-        DICTIONARY.put("-", "T");
-        DICTIONARY.put("..-", "U");
-        DICTIONARY.put("...-", "V");
-        DICTIONARY.put(".--", "W");
-        DICTIONARY.put("-..-", "X");
-        DICTIONARY.put("-.--", "Y");
-        DICTIONARY.put("--..", "Z");
-        
-        // Chiffres
-        DICTIONARY.put("-----", "0");
-        DICTIONARY.put(".----", "1");
-        DICTIONARY.put("..---", "2");
-        DICTIONARY.put("...--", "3");
-        DICTIONARY.put("....-", "4");
-        DICTIONARY.put(".....", "5");
-        DICTIONARY.put("-....", "6");
-        DICTIONARY.put("--...", "7");
-        DICTIONARY.put("---..", "8");
-        DICTIONARY.put("----.", "9");
+    private static final Map<String, String> DICTIONARY = Map.ofEntries(
+        // Letters
+        Map.entry(".-",   "A"), Map.entry("-...", "B"), Map.entry("-.-.", "C"),
+        Map.entry("-..",  "D"), Map.entry(".",     "E"), Map.entry("..-.", "F"),
+        Map.entry("--.",  "G"), Map.entry("....", "H"), Map.entry("..",   "I"),
+        Map.entry(".---", "J"), Map.entry("-.-",  "K"), Map.entry(".-..", "L"),
+        Map.entry("--",   "M"), Map.entry("-.",   "N"), Map.entry("---",  "O"),
+        Map.entry(".--.", "P"), Map.entry("--.-", "Q"), Map.entry(".-.",  "R"),
+        Map.entry("...",  "S"), Map.entry("-",    "T"), Map.entry("..-",  "U"),
+        Map.entry("...-", "V"), Map.entry(".--",  "W"), Map.entry("-..-", "X"),
+        Map.entry("-.--", "Y"), Map.entry("--..", "Z"),
+        // Digits
+        Map.entry("-----", "0"), Map.entry(".----", "1"), Map.entry("..---", "2"),
+        Map.entry("...--", "3"), Map.entry("....-", "4"), Map.entry(".....", "5"),
+        Map.entry("-....", "6"), Map.entry("--...", "7"), Map.entry("---..", "8"),
+        Map.entry("----.", "9"),
+        // Punctuation
+        Map.entry(".-.-.-", "."), Map.entry("--..--", ","), Map.entry("---...", ":"),
+        Map.entry("..--..", "?"), Map.entry(".----.", "'"), Map.entry("-....-", "-"),
+        Map.entry("-..-.",  "/"), Map.entry(".-..-.", "\""), Map.entry(".--.-.", "@"),
+        Map.entry("-...-",  "="), Map.entry("...---...", "SOS")
+    );
 
-        // Ponctuation & Spécial
-        DICTIONARY.put(".-.-.-", ".");
-        DICTIONARY.put("--..--", ",");
-        DICTIONARY.put("---...", ":");
-        DICTIONARY.put("..--..", "?");
-        DICTIONARY.put(".----.", "'");
-        DICTIONARY.put("-....-", "-");
-        DICTIONARY.put("-..-.", "/");
-        DICTIONARY.put(".-..-.", "\"");
-        DICTIONARY.put(".--.-.", "@");
-        DICTIONARY.put("-...-", "=");
-        DICTIONARY.put("...---...", "SOS");
-    }
-    
     /**
-     * Récupère le caractère correspondant au code Morse fourni.
-     * @param code Le code Morse (ex: ".-")
-     * @return La lettre ASCII ou une chaîne vide si non trouvé.
+     * Returns the character for the given Morse code, or an empty string if not found.
+     *
+     * @param code Morse code (e.g. {@code ".-"})
+     * @return decoded character or {@code ""}
      */
     public static String get(String code) {
         return DICTIONARY.getOrDefault(code, "");

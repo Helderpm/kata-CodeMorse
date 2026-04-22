@@ -67,7 +67,6 @@ class SpecificTestCaseTest {
 
     @Test
     @DisplayName("Test Case 5 - THE QUICK BROWN FOX")
-    //@Disabled("Temporarily disabled - signal has complex timing that doesn't work with current adaptive thresholding")
     void testCase5() {
         // Use a shorter, more manageable version of the THE QUICK BROWN FOX message
         // The original was too long and causing bit analysis issues
