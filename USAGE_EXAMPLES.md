@@ -53,20 +53,8 @@ decoder.decodeMorse(decoder.decodeBitsAdvanced("11111100111111"));
 // Balanced — general use
 MorseDecoder decoder = new MorseDecoder();
 
-// Optimised for fast transmissions
-MorseDecoder fast = new MorseDecoder(MorseDecoderConfig.forFastTransmission());
-
-// Optimised for slow transmissions
-MorseDecoder slow = new MorseDecoder(MorseDecoderConfig.forSlowTransmission());
-
-// Robust for noisy signals
-MorseDecoder noisy = new MorseDecoder(MorseDecoderConfig.forNoisyEnvironment());
-
-// High-accuracy with strict validation
-MorseDecoder precise = new MorseDecoder(MorseDecoderConfig.forPrecisionDecoding());
-
-// Logging enabled — useful for debugging threshold decisions
-MorseDecoder educational = new MorseDecoder(MorseDecoderConfig.forEducationalUse());
+// Explicit default config
+MorseDecoder decoder = new MorseDecoder(MorseDecoderConfig.defaultConfig());
 ```
 
 ## Custom Configuration
@@ -77,7 +65,6 @@ MorseDecoderConfig config = new MorseDecoderConfig.Builder()
     .strictMode(true)
     .maxSignalLength(5000)
     .morseTimeUnitMultipliers(2.0, 6.0)
-    .thresholdSafetyFactor(2.5)
     .build();
 
 MorseDecoder decoder = new MorseDecoder(config);

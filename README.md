@@ -67,11 +67,6 @@ String text = decoder.decodeMorse(morse);
 
 ```java
 new MorseDecoder(MorseDecoderConfig.defaultConfig())
-new MorseDecoder(MorseDecoderConfig.forFastTransmission())
-new MorseDecoder(MorseDecoderConfig.forSlowTransmission())
-new MorseDecoder(MorseDecoderConfig.forNoisyEnvironment())
-new MorseDecoder(MorseDecoderConfig.forPrecisionDecoding())
-new MorseDecoder(MorseDecoderConfig.forEducationalUse())
 ```
 
 ### Custom Builder
@@ -93,13 +88,9 @@ MorseDecoder decoder = new MorseDecoder(config);
 |---|---|---|
 | `defaultThresholdOffset(double)` | `0.5` | Fallback threshold when signal is empty |
 | `morseTimeUnitMultipliers(low, high)` | `2.0, 6.0` | Multipliers used when zero distribution is empty |
-| `thresholdSafetyFactor(double)` | `2.0` | Used to enforce low < high on thresholds |
 | `enableLogging(boolean)` | `true` | JUL logging of threshold decisions |
 | `strictMode(boolean)` | `false` | Validates input — throws on invalid chars or oversized signals |
 | `maxSignalLength(int)` | `1 000 000` | Max allowed bit string length in strict mode |
-| `morseSymbols(dot, dash)` | `".", "-"` | Output symbols |
-| `morseSeparators(letter, word)` | `" ", "   "` | Output separators |
-| `unicodeSymbols(dot, dash)` | `'·', '−'` | Unicode variants normalised on input |
 
 ## Running Tests
 
