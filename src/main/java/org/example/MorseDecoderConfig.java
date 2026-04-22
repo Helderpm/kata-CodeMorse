@@ -46,25 +46,54 @@ public class MorseDecoderConfig {
     }
 
     // Getters
+    /** Gets the default threshold offset.
+     * @return the default threshold offset */
     public double getDefaultThresholdOffset() { return defaultThresholdOffset; }
+    /** Gets the Morse time unit multiplier low.
+     * @return the Morse time unit multiplier low */
     public double getMorseTimeUnitMultiplierLow() { return morseTimeUnitMultiplierLow; }
+    /** Gets the Morse time unit multiplier high.
+     * @return the Morse time unit multiplier high */
     public double getMorseTimeUnitMultiplierHigh() { return morseTimeUnitMultiplierHigh; }
+    /** Gets the threshold safety factor.
+     * @return the threshold safety factor */
     public double getThresholdSafetyFactor() { return thresholdSafetyFactor; }
+    /** Gets the single duration threshold.
+     * @return the single duration threshold */
     public int getSingleDurationThreshold() { return singleDurationThreshold; }
-    
+
+    /** Gets the Morse dot symbol.
+     * @return the Morse dot symbol */
     public String getMorseDot() { return morseDot; }
+    /** Gets the Morse dash symbol.
+     * @return the Morse dash symbol */
     public String getMorseDash() { return morseDash; }
+    /** Gets the Morse word separator.
+     * @return the Morse word separator */
     public String getMorseWordSeparator() { return morseWordSeparator; }
+    /** Gets the Morse letter separator.
+     * @return the Morse letter separator */
     public String getMorseLetterSeparator() { return morseLetterSeparator; }
+    /** Gets the Unicode dot character.
+     * @return the Unicode dot character */
     public char getUnicodeDot() { return unicodeDot; }
+    /** Gets the Unicode dash character.
+     * @return the Unicode dash character */
     public char getUnicodeDash() { return unicodeDash; }
-    
+
+    /** Checks if logging is enabled.
+     * @return true if logging is enabled */
     public boolean isEnableLogging() { return enableLogging; }
+    /** Checks if strict mode is enabled.
+     * @return true if strict mode is enabled */
     public boolean isStrictMode() { return strictMode; }
+    /** Gets the maximum signal length.
+     * @return the maximum signal length */
     public int getMaxSignalLength() { return maxSignalLength; }
 
     /**
      * Creates a default configuration.
+     * @return a default MorseDecoderConfig
      */
     public static MorseDecoderConfig defaultConfig() {
         return new Builder().build();
@@ -93,43 +122,69 @@ public class MorseDecoderConfig {
         private int maxSignalLength = 1000000;
 
         // Empty constructor is intentional - default values are set at field declaration level
+        /** Creates a new Builder with default values. */
         public Builder() {}
 
         // Timing configuration
+        /** Sets the default threshold offset.
+         * @param value the default threshold offset
+         * @return this Builder instance */
         public Builder defaultThresholdOffset(double value) {
             this.defaultThresholdOffset = value;
             return this;
         }
 
+        /** Sets the Morse time unit multipliers for low and high thresholds.
+         * @param low the low multiplier
+         * @param high the high multiplier
+         * @return this Builder instance */
         public Builder morseTimeUnitMultipliers(double low, double high) {
             this.morseTimeUnitMultiplierLow = low;
             this.morseTimeUnitMultiplierHigh = high;
             return this;
         }
 
+        /** Sets the threshold safety factor.
+         * @param value the threshold safety factor
+         * @return this Builder instance */
         public Builder thresholdSafetyFactor(double value) {
             this.thresholdSafetyFactor = value;
             return this;
         }
 
+        /** Sets the single duration threshold.
+         * @param value the single duration threshold
+         * @return this Builder instance */
         public Builder singleDurationThreshold(int value) {
             this.singleDurationThreshold = value;
             return this;
         }
 
         // Symbol configuration
+        /** Sets the Morse symbols for dot and dash.
+         * @param dot the dot symbol
+         * @param dash the dash symbol
+         * @return this Builder instance */
         public Builder morseSymbols(String dot, String dash) {
             this.morseDot = dot;
             this.morseDash = dash;
             return this;
         }
 
+        /** Sets the Morse separators for letters and words.
+         * @param letterSeparator the letter separator
+         * @param wordSeparator the word separator
+         * @return this Builder instance */
         public Builder morseSeparators(String letterSeparator, String wordSeparator) {
             this.morseLetterSeparator = letterSeparator;
             this.morseWordSeparator = wordSeparator;
             return this;
         }
 
+        /** Sets the Unicode symbols for dot and dash.
+         * @param dot the dot character
+         * @param dash the dash character
+         * @return this Builder instance */
         public Builder unicodeSymbols(char dot, char dash) {
             this.unicodeDot = dot;
             this.unicodeDash = dash;
@@ -137,21 +192,32 @@ public class MorseDecoderConfig {
         }
 
         // Behavioral configuration
+        /** Enables or disables logging.
+         * @param value true to enable logging, false to disable
+         * @return this Builder instance */
         public Builder enableLogging(boolean value) {
             this.enableLogging = value;
             return this;
         }
 
+        /** Enables or disables strict mode.
+         * @param value true to enable strict mode, false to disable
+         * @return this Builder instance */
         public Builder strictMode(boolean value) {
             this.strictMode = value;
             return this;
         }
 
+        /** Sets the maximum signal length.
+         * @param value the maximum signal length
+         * @return this Builder instance */
         public Builder maxSignalLength(int value) {
             this.maxSignalLength = value;
             return this;
         }
 
+        /** Builds the MorseDecoderConfig.
+         * @return the built MorseDecoderConfig */
         public MorseDecoderConfig build() {
             validateConfiguration();
             return new MorseDecoderConfig(this);
@@ -182,6 +248,7 @@ public class MorseDecoderConfig {
 
     /**
      * Creates a configuration optimized for fast transmission.
+     * @return a configuration for fast transmission
      */
     public static MorseDecoderConfig forFastTransmission() {
         return new Builder()
@@ -193,6 +260,7 @@ public class MorseDecoderConfig {
 
     /**
      * Creates a configuration optimized for slow transmission.
+     * @return a configuration for slow transmission
      */
     public static MorseDecoderConfig forSlowTransmission() {
         return new Builder()
@@ -204,6 +272,7 @@ public class MorseDecoderConfig {
 
     /**
      * Creates a configuration for noisy environments.
+     * @return a configuration for noisy environments
      */
     public static MorseDecoderConfig forNoisyEnvironment() {
         return new Builder()
@@ -216,6 +285,7 @@ public class MorseDecoderConfig {
 
     /**
      * Creates a configuration for precision decoding.
+     * @return a configuration for precision decoding
      */
     public static MorseDecoderConfig forPrecisionDecoding() {
         return new Builder()
@@ -228,6 +298,7 @@ public class MorseDecoderConfig {
 
     /**
      * Creates a configuration for educational purposes.
+     * @return a configuration for educational use
      */
     public static MorseDecoderConfig forEducationalUse() {
         return new Builder()
